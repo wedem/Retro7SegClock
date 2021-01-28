@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<!-- 
+  Simple WebFrontend for ESP8266 7 Segment Retro Clock
+	01/2021 T.Wedemeyer
+	www.thomas-wedemeyer.de
+-->
+<html>
+<head>
+  <title>ESP8266 Seven Segment Retro Clock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <h1>ESP8266 Seven Segment Retro Clock</h1>
+  
+  <p>Time: <strong> <span id="time">Time: </span></strong></p>
+  
+  <p>Displaymode: <strong> <span id="displaymode"> </span></strong></p>
+  <p>
+    <button class="button" onmousedown="switchButton('setDisplayMode');" ontouchstart="switchButton('setDisplayMode');" >Change 12/24</button>
+  </p>
+  
+  <p>Blinking Dots: <strong><span id="dots"> </span></strong></p>
+  <p>
+	<button class="button" onmousedown="switchButton('setDots');" ontouchstart="switchButton('setDots');" >Blink On/Off</button>
+  </p>
+  
+  <p>Overlaymode: <strong><span id="overlaymode">  </span></strong></p>
+  <p>
+    <button class="button" onmousedown="switchButton('setOverlayMode');" ontouchstart="switchButton('setOverlayMode');" >Overlay On/Off</button>
+  </p>
+  
+  <p>Brightness: <strong><span id="brightness">  </span></strong></p>
+  <p>
+	<button class="button" onmousedown="switchButton('setBrigthnessN');" ontouchstart="switchButton('setBrigthnessN');" >-</button>
+	<button class="button button2" onmousedown="switchButton('setBrigthnessP');" ontouchstart="switchButton('setBrigthnessP');" >+</button>
+  </p>
+  
+  <p>Parlette: <strong><span id="palette"> </span></strong></p>
+  <p>
+	<button class="button" onmousedown="switchButton('setPaletteN');" ontouchstart="switchButton('setPaletteN');" >-</button>
+	<button class="button button2" onmousedown="switchButton('setPaletteP');" ontouchstart="switchButton('setPaletteP');" >+</button>
+  </p>
+  
+    <p>WiFi/NTP Setup:</p>
+  <p>
+    <a href="/start_config_ap"><button class="button">Reset</button></a>
+  </p>
+</body>
+<script>
+
+window.onload = function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+		try {
+		myObj = JSON.parse(this.responseText);
+		document.getElementById("time").innerHTML = myObj["time"];
+		document.getElementById("palette").innerHTML = myObj["palette"];
+		document.getElementById("overlaymode").innerHTML =  myObj["overlaymode"];
+		document.getElementById("brightness").innerHTML = myObj["brightness"];
+		document.getElementById("dots").innerHTML = myObj["dots"];
+		document.getElementById("displaymode").innerHTML = myObj["displaymode"];
+		}
+		catch (e) {
+				console.err(e);
+		return {}
+		}
+      }
+    };
+    xhttp.open("GET", "/status", true);
+    xhttp.send();
+}
+
+  
+    setInterval(function ( ) {
+    var xhttp = new XMLHttpRequest();
+	var myObj, x;
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        myObj = JSON.parse(this.responseText);
+		document.getElementById("time").innerHTML = myObj.time;
+		document.getElementById("palette").innerHTML = myObj.palette;
+		document.getElementById("overlaymode").innerHTML =  myObj.overlaymode;
+		document.getElementById("brightness").innerHTML = myObj.brightness;
+		document.getElementById("dots").innerHTML = myObj.dots;
+		document.getElementById("displaymode").innerHTML = myObj.displaymode;
+      }
+    };
+    xhttp.open("GET", "/status", true);
+    xhttp.send();
+  }, 1000 ) ;
+  
+  function switchButton(x) {
+     var xhr = new XMLHttpRequest();
+     xhr.open("GET", "/" + x, true);
+     xhr.send();
+   }
+</script>
+</html>
