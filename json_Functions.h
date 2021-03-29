@@ -16,7 +16,7 @@ char * listConfigJSON() {
   JsonObject root = jsonBuffer.to<JsonObject>();
   root["hostname"] = HOSTNAME;
   root["ntp_host"]  = NTP_HOST;
-  root["timeZone"]  = timeZoneOffset; 
+  //root["timeZone"]  = timeZoneOffset; 
   uint16_t msg_len = measureJson(root) + 1;
 
   char * buffer = (char *) malloc(msg_len);
@@ -42,8 +42,10 @@ char * listStatusJSON() {
   const size_t bufferSize = JSON_OBJECT_SIZE(6) + 1500;  
   DynamicJsonDocument jsonBuffer(bufferSize);
   JsonObject root = jsonBuffer.to<JsonObject>();
-  time_t    timestamp = now();
+  TimeChangeRule *tcr;        // pointer to the time change rule, use to get the TZ abbrev
+  time_t timestamp = tz.toLocal(now(), &tcr);
   char str_time[10];
+  char str_tz[25];
 
   sprintf(str_time, "%02d:%02d:%02d", hour(timestamp),minute(timestamp),second(timestamp));
   root["time"] = str_time;
@@ -61,6 +63,9 @@ char * listStatusJSON() {
     root["displaymode"]  = "12h";
    else
     root["displaymode"]  = "24h"; 
+
+  sprintf(str_tz,"%s",timezones[timezone_cfg]);  
+  root["tz"]= str_tz;
    
   uint16_t msg_len = measureJson(root) + 1;
   char * buffer = (char *) malloc(msg_len);

@@ -16,7 +16,8 @@
 // Library WiFiManager in Version 0.16.0 
 // Library ESP8266mDNS in Version 1.2 
 // Library NTPClient in Version 3.2.0 
-// Library ArduinoJson in Version 6.12.0 
+// Library ArduinoJson in Version 6.12.0
+// Library TimeZone in 1.2.7 
 
 #include "definition.h"
 
@@ -33,6 +34,8 @@
 
 #include <FastLED.h>                              // these libraries will be included in all cases....
 #include <TimeLib.h>
+#include <Timezone.h>    // https://github.com/JChristensen/Timezone
+#include "tz_definitions.h"
 #include <EEPROM.h>
 
 // ***************************************************************************
@@ -131,6 +134,7 @@ void saveConfigCallback () {
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);   //
 
+Timezone tz = CE;
 
 // ***************************************************************************
 // Setup for the Clock
@@ -167,6 +171,7 @@ int overlayInterval = 200;                       // interval (ms) to change colo
 byte paletteSelect = 2;                          // config parameter for the color palette (will be saved to EEPROM)
 byte brightnessSelect = 3;                       // config parameter for the brightnesslevel; (will be saved to EEPROM)
 byte dotMode= 0;                                 // config parameter for the blinking dots on/off ; (will be saved to EEPROM)
+byte timezone_cfg = 2;                           // config parameter for the timezone decoding (will be saved in EEPROM)
 #define PALETTECOUNT    7                         // Nr of color palettes
 
 byte btnRepeatCounter = 1;
@@ -194,6 +199,8 @@ void switchBrightness();
   2 = displayMode 12/24h
   3 = overlayMode on/off
   4 = dotMode (blinking dots on / off
+  5 = timezone_cfg
+  6 = 
 */
 
 // ***************************************************************************
@@ -286,8 +293,8 @@ void setup() {
   
   char _ntp_offset[6]; //needed tempararily for WiFiManager Settings
   WiFiManagerParameter custom_ntp_host("host", "NTP hostname", NTP_HOST, 64, " maxlength=64");
-  sprintf(_ntp_offset, "%d", timeZoneOffset);
-  WiFiManagerParameter custom_ntp_timezoneOffset("offset", "Timeozone Offset", _ntp_offset, 5, " maxlength=5 type=\"number\"");
+  //sprintf(_ntp_offset, "%d", timeZoneOffset);
+  //WiFiManagerParameter custom_ntp_timezoneOffset("offset", "Timeozone Offset", _ntp_offset, 5, " maxlength=5 type=\"number\"");
 
   //Local intialization. Once its business is done, there is no need to keep it around
   wifi_station_set_hostname(const_cast<char*>(HOSTNAME));
@@ -302,7 +309,7 @@ void setup() {
 
   wifiManager.addParameter(&custom_hostname);
   wifiManager.addParameter(&custom_ntp_host);
-  wifiManager.addParameter(&custom_ntp_timezoneOffset);
+  //wifiManager.addParameter(&custom_ntp_timezoneOffset);
 
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
@@ -331,7 +338,7 @@ void setup() {
   //save the custom parameters to FS/EEPROM
   strcpy(HOSTNAME, custom_hostname.getValue());
   strcpy(NTP_HOST, custom_ntp_host.getValue());
-  timeZoneOffset = atoi(custom_ntp_timezoneOffset.getValue());
+  //timeZoneOffset = atoi(custom_ntp_timezoneOffset.getValue());
   if (updateConfig) {
       (writeConfigFS(updateConfig)) ? Serial.println("WiFiManager config FS Save success!"): Serial.println("WiFiManager config FS Save failure!");
   }
@@ -372,7 +379,7 @@ void setup() {
 
   // Init NTP client server host & timezone
   timeClient.setPoolServerName(NTP_HOST);
-  timeClient.setTimeOffset(timeZoneOffset * 60);
+  //timeClient.setTimeOffset(timeZoneOffset * 60);
 
   // Setup of the LEDs
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_COUNT).setCorrection(TypicalSMD5050).setTemperature(DirectSunlight).setDither(1);
@@ -382,6 +389,7 @@ void setup() {
   FastLED.show();
   EEPROM.begin(512);
   loadValuesFromEEPROM();
+  timezone_set(timezone_cfg);
   switchPalette();
   switchBrightness();
 
@@ -510,10 +518,15 @@ void colorOverlay() {                                                           
 // in this function 
 // ***************************************************************************
 void updateDisplay(byte color, byte colorSpacing) {                                                         // this is what redraws the "screen"
+
+  TimeChangeRule *tcr;        // pointer to the time change rule, use to get the TZ abbrev
+  
   FastLED.clear();                                                                                          // clear whatever the leds might have assigned currently...
   switchBrightness();
   switchPalette();
-  displayTime(now(), color, colorSpacing);                                                                  // ...set leds to display the time...
+
+  time_t t = tz.toLocal(now(), &tcr);
+  displayTime(t, color, colorSpacing);                                                                  // ...set leds to display the time...
   if (overlayMode == 1) colorOverlay();                                                                     // ...and if using overlayMode = 1 draw custom colors over single leds
   if (brightnessAuto == 1) {                                                                                // If brightness is adjusted automatically by using readLDR()...
     FastLED.setBrightness(avgLDR);                                                                          // ...set brightness to avgLDR
@@ -681,7 +694,44 @@ void loadValuesFromEEPROM() {
     else  paletteSelect = 0;
   tmp = EEPROM.read(1);
   if(tmp<=2) brightnessSelect = tmp; 
-    else  brightnessSelect = 0;    
+    else  brightnessSelect = 0; 
+  tmp = EEPROM.read(5);
+  if(tmp > TIMEZONE_MAX)
+    timezone_cfg  = 2;
+  else
+    timezone_cfg = tmp;   
+}
+
+// ***************************************************************************
+// Set the timezone  
+// ***************************************************************************
+void timezone_set(byte zone_cfg)
+{
+   switch(zone_cfg)
+   {
+      case 0:         tz =ausET;
+        break;
+      case 1:        tz =tzMSK;
+        break;
+      case 2:        tz =CE;
+        break;
+      case 3:        tz =UK;
+        break;
+      case 4:        tz =PT;
+        break;
+      case 5:        tz =UTC;
+        break;
+      case 6:        tz =usET;
+        break;
+      case 7:        tz =usCT;
+        break;
+      case 8:        tz =usMT;
+        break;
+      case 9:        tz =usAZ;
+        break;
+      default:       tz =usPT;
+        break;
+   }
 }
 
 // ***************************************************************************

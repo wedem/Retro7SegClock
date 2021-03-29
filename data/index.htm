@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- 
   Simple WebFrontend for ESP8266 7 Segment Retro Clock
-	01/2021 T.Wedemeyer
+	03/2021 T.Wedemeyer
 	www.thomas-wedemeyer.de
 -->
 <html>
@@ -43,7 +43,13 @@
 	<button class="button button2" onmousedown="switchButton('setPaletteP');" >+</button>
   </p>
   
-    <p>WiFi/NTP Setup:</p>
+  <p>Timezone: <strong> <span id="tz"></span></strong></p>
+   <p>
+	<button class="button" onmousedown="switchButton('setTzN');" >-</button>
+	<button class="button button2" onmousedown="switchButton('setTzP');" >+</button>
+  </p> 
+  
+    <p>WiFi:</p>
   <p>
     <a href="/reset_wlan"><button class="button">Reset</button></a>
 	<br>
@@ -64,6 +70,8 @@ window.onload = function () {
 		document.getElementById("brightness").innerHTML = myObj["brightness"];
 		document.getElementById("dots").innerHTML = myObj["dots"];
 		document.getElementById("displaymode").innerHTML = myObj["displaymode"];
+		document.getElementById("tz").innerHTML = myObj["tz"];
+		
 		}
 		catch (e) {
 				console.err(e);
@@ -88,6 +96,7 @@ window.onload = function () {
 		document.getElementById("brightness").innerHTML = myObj.brightness;
 		document.getElementById("dots").innerHTML = myObj.dots;
 		document.getElementById("displaymode").innerHTML = myObj.displaymode;
+		document.getElementById("tz").innerHTML = myObj["tz"];
       }
     };
     xhttp.open("GET", "/status", true);

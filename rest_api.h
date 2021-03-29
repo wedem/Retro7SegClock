@@ -187,3 +187,27 @@ server.on("/setPaletteP", []() {
   Serial.println(paletteSelect);
   server.send(200, "text/plain", 0 );
 });
+
+server.on("/setTzN", []() {
+  if ( timezone_cfg > 0 ) 
+    timezone_cfg--; 
+  else timezone_cfg = TIMEZONE_MAX;
+  EEPROM.put(5, timezone_cfg);                                                             // ...and write setting to eeprom
+  EEPROM.commit();
+  timezone_set(timezone_cfg);
+  Serial.print("timezone_cfg = ");
+  Serial.println(timezone_cfg);
+  server.send(200, "text/plain", 0 );
+});
+
+server.on("/setTzP", []() {
+  if ( timezone_cfg < TIMEZONE_MAX ) 
+    timezone_cfg++; 
+  else timezone_cfg = 0;
+  EEPROM.put(5, timezone_cfg);                                                             // ...and write setting to eeprom
+  EEPROM.commit();
+  timezone_set(timezone_cfg);
+  Serial.print("timezone_cfg = ");
+  Serial.println(timezone_cfg);
+  server.send(200, "text/plain", 0 );
+});
