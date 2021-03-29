@@ -13,6 +13,8 @@ Changes to the original firmware:
   * Added Web-Interface for configuration of the clock display modes
   * Fixed flicker problem controlling the WS2812 leds
   * Added extra display mode blinking dots on/off
+  * Added support for automatic summer/winter time
+  * Added support for timezones
   
 Features from the original firmware still supported but not tested:
   * WiFi WPS setup
