@@ -21,5 +21,7 @@ Features from the original firmware still supported but not tested:
   * Setup of the display mode via external buttons
   * automatic brightness control
 
+# Connection to the NodeMCU-Module:
+The ESP8266 is working with 3.3V output signals. This doesn't match the requirements of the WS2812-LEDs which need 5V-CMOS-Levels as input signals. For levelshifting I used an 74HCT00 NAND-Gate. The levelshifting circuit can be found in the repository. 
 
 License: CC BY-NC 4.0
